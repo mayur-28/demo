@@ -4,3 +4,4 @@ data/*.db*
 tests/e2e/screenshots
 .env
 *.bundle
+*.zip
