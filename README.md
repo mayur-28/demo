@@ -29,6 +29,28 @@ Reset the demo database: `npm run seed`.
 | `sam@demo.app` | User | Not onboarded — shows onboarding and empty states |
 | `coach@demo.app` | Coach/admin | Templates, assigning, exercise and food libraries |
 
+## Deploy (Railway)
+
+The repo includes a `Dockerfile` and `railway.json` (health check at `/api/health`).
+
+1. In Railway: **New Project → Deploy from GitHub repo**, then pick this repo and branch `fuelform`.
+2. On the service, add a **Volume** mounted at `/data`. Without it, all data is lost on every restart.
+3. Under **Variables**, set:
+
+   | Variable | Value |
+   |---|---|
+   | `SEED_DEMO` | `false` |
+   | `ADMIN_EMAIL` | your coach login email |
+   | `ADMIN_PASSWORD` | a strong password (8+ characters) |
+   | `ADMIN_NAME` | your name (optional) |
+   | `COOKIE_SECURE` | `true` |
+
+4. Under **Settings → Networking**, click **Generate Domain** to get your public `https://….up.railway.app` link.
+
+The coach account and the exercise/food libraries are created on the first start only. `ADMIN_*` values are ignored once the database exists. Leave out `SEED_DEMO=false` (and the `ADMIN_*` variables) to get a public demo with the demo accounts instead.
+
+Other environment variables: `PORT` (default 3001), `DATABASE_FILE` (Docker default `/data/fuelform.db`), `TRUST_PROXY` (Docker default `1`).
+
 ## Checks
 
 ```bash

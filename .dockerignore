@@ -1,0 +1,7 @@
+node_modules
+dist
+data
+tests/e2e/screenshots
+*.bundle
+*.zip
+.git

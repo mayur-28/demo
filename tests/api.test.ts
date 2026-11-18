@@ -384,3 +384,17 @@ describe('robustness', () => {
     expect(res.headers['x-powered-by']).toBeUndefined();
   });
 });
+
+describe('production start (no demo users)', () => {
+  it('creates only the configured coach, with libraries and templates', async () => {
+    const { openDb, all } = await import('../server/db.ts');
+    const { seed } = await import('../server/seed.ts');
+    const db = openDb(':memory:');
+    seed(db, TODAY, { demoUsers: false, admin: { email: 'Owner@Example.com', password: 'a-strong-pass', name: 'Owner' } });
+    const users = all<{ email: string; role: string }>(db, 'SELECT email, role FROM users');
+    expect(users).toEqual([{ email: 'owner@example.com', role: 'admin' }]);
+    expect(all(db, 'SELECT id FROM foods').length).toBeGreaterThan(40);
+    expect(all(db, "SELECT id FROM workout_plans WHERE kind = 'template'").length).toBe(3);
+    expect(all(db, 'SELECT id FROM food_logs').length).toBe(0);
+  });
+});

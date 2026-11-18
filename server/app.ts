@@ -12,7 +12,9 @@ import { trackingRoutes } from './routes/tracking.ts';
 export function createApp(db: DB, opts: { staticDir?: string } = {}): Express {
   const app = express();
   app.disable('x-powered-by');
-  app.set('trust proxy', 'loopback');
+  // Behind a hosting proxy (Railway, Render, Fly) set TRUST_PROXY=1 so req.ip is the visitor's address.
+  const trust = process.env.TRUST_PROXY;
+  app.set('trust proxy', trust ? (/^\d+$/.test(trust) ? Number(trust) : trust) : 'loopback');
 
   app.use((_req, res, next) => {
     res.set({

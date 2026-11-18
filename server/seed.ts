@@ -118,16 +118,31 @@ function rng(seedValue: number) {
   };
 }
 
-export function seed(db: DB, today = localToday()) {
+export interface SeedOptions {
+  /** Create the demo users (Alex, Jordan, Sam) and their history. Default true. */
+  demoUsers?: boolean;
+  /** Use these details for the coach account instead of coach@demo.app / demo1234. */
+  admin?: { email: string; password: string; name: string };
+}
+
+/**
+ * Loads the exercise and food libraries and plan templates, plus (optionally)
+ * demo users. With `demoUsers: false` and `admin`, this is a clean production start.
+ */
+export function seed(db: DB, today = localToday(), opts: SeedOptions = {}) {
+  const demo = opts.demoUsers !== false;
   const rand = rng(42);
   const pw = hashPassword(DEMO_PASSWORD);
   const user = (email: string, name: string, role: 'admin' | 'user') =>
     run(db, 'INSERT INTO users (email, password_hash, name, role) VALUES (?, ?, ?, ?)', email, pw, name, role).id;
 
-  const coach = user('coach@demo.app', 'Casey Coach', 'admin');
-  const alex = user('alex@demo.app', 'Alex Rivera', 'user');
-  const jordan = user('jordan@demo.app', 'Jordan Lee', 'user');
-  user('sam@demo.app', 'Sam Patel', 'user'); // not onboarded: shows the onboarding flow
+  const coach = opts.admin
+    ? run(db, "INSERT INTO users (email, password_hash, name, role) VALUES (?, ?, ?, 'admin')",
+      opts.admin.email.trim().toLowerCase(), hashPassword(opts.admin.password), opts.admin.name).id
+    : user('coach@demo.app', 'Casey Coach', 'admin');
+  const alex = demo ? user('alex@demo.app', 'Alex Rivera', 'user') : 0;
+  const jordan = demo ? user('jordan@demo.app', 'Jordan Lee', 'user') : 0;
+  if (demo) user('sam@demo.app', 'Sam Patel', 'user'); // not onboarded: shows the onboarding flow
 
   // ---- library (validated through the same schemas as the API)
   const foodId = new Map<string, number>();
@@ -244,6 +259,8 @@ export function seed(db: DB, today = localToday()) {
   const vegId = createDietPlan(db, {
     name: 'Vegetarian High-Protein ~2,100 kcal', description: 'Egg, dairy and legume based. Contains egg, dairy, soy, sesame and tree nuts.', items: vegItems,
   }, { kind: 'template', ownerId: null, createdBy: coach });
+
+  if (!demo) return { coach, alex, jordan };
 
   // ---- profiles
   saveProfile(db, alex, profileSchema.parse({
